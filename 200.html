@@ -49,12 +49,18 @@
     var devid = myUrl.searchParams.get("device_id");
     document.getElementById('devid').value = devid || '';
     if (userInfo){
+        try {
         userInfo = JSON.parse(userInfo);
+        console.log(userInfo);
         document.getElementById('name').value = userInfo.name;
         document.getElementById('sname').value = userInfo.short_name;
         document.getElementById('devid').value = devid || userInfo.devid || '';
         document.getElementById('p1').classList.add('d-none');
         fetchEvents();
+        } catch (e) {
+            document.getElementById('p2').classList.add('d-none')
+            document.getElementById('p1').classList.remove('d-none')
+        }
     } else {
         document.getElementById('p2').classList.add('d-none')
         document.getElementById('p1').classList.remove('d-none')
