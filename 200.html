@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Event Registration for routechoices.com</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x" crossorigin="anonymous">
+        <link rel="stylesheet" href="https://www.routechoices.com/static/vendor/font-awesome-4.7.0/css/font-awesome.min.css"/>
+    </head>
+    <body>
+    <div class="container">
+        <div id="p1">
+            <h1>Settings</h1>
+            <form id="form1">
+                <label for="name" class="form-label">Name</label>
+                <input class="form-control" type="text" id="name" name="name" required/>
+                <label for="sname" class="form-label">Short Name</label>
+                <input class="form-control" type="text" id="sname" name="sname" required/>
+                <label for="devid" class="form-label">Device ID:</label>
+                <input class="form-control" type="text" id="devid" name="devid" required/>
+                <input style="margin-top:15px" class="form-control btn btn-primary" type="submit" value="Save" />
+            </form>
+        </div>
+        <div id="p2" class="d-none">
+            <div><button class="btn user-setting-btn"><i class="fa fa-cog"></i> settings</button> <button class="btn refresh-btn"><i class="fa fa-refresh"></i> refresh</button></div>
+            <h1>Event Selection</h1>
+            <form id="form2">
+                <label for="events" class="form-label">Event:</label>
+                <select class="form-select" id="events" name="events"></select>
+                <input style="margin-top:15px" class="form-control btn btn-primary" type="submit" value="Submit" />
+            </form>
+        </div>
+        <div id="p3" class="d-none">
+            <div><button class="btn user-setting-btn"><i class="fa fa-cog"></i> settings</button> <button class="btn refresh-btn"><i class="fa fa-refresh"></i> refresh</button></div>
+            <h1><i class="fa fa-warning"></i> No events to register</h1>
+        </div>
+        <div id="p4" class="d-none">
+            <div><button class="btn user-setting-btn"><i class="fa fa-cog"></i> settings</button> <button class="btn refresh-btn"><i class="fa fa-refresh"></i> refresh</button></div>
+            <h1><i class="fa fa-success"></i> You have been registered</h1>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-gtEjrD/SeCtmISkJkNUaaKMoLD0//ElJ19smozuHV6z3Iehds+3Ulb9Bn9Plx0x4" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/luxon/1.27.0/luxon.min.js" integrity="sha512-cQXElo4AdS11Wtr5GFBmliue0OBZIhJjcSOSmF3RASBNfJMrkhF/F5JknHUm9klwHLLVG5+oiV6INy/yjgYPoA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+    var userInfo = window.localStorage.getItem('userInfo');
+    if (userInfo){
+        userInfo = JSON.parse(userInfo);
+        document.getElementById('name').value = userInfo.name;
+        document.getElementById('sname').value = userInfo.short_name;
+        document.getElementById('devid').value = userInfo.devid;
+        document.getElementById('p1').classList.add('d-none');
+        fetchEvents();
+    } else {
+        document.getElementById('p2').classList.add('d-none')
+        document.getElementById('p1').classList.remove('d-none')
+    }
+    document.getElementById('form1').onsubmit = function(ev) {
+        ev.preventDefault();
+        userInfo = {}
+        userInfo.name = document.getElementById('name').value;
+        userInfo.short_name = document.getElementById('sname').value;
+        userInfo.devid = document.getElementById('devid').value;
+        window.localStorage.setItem('userInfo', JSON.stringify(userInfo));
+        document.getElementById('p1').classList.add('d-none')
+        fetchEvents();
+    };
+    document.getElementById('form2').onsubmit = function(ev) {
+        ev.preventDefault();
+        data = {}
+        data.name = document.getElementById('name').value;
+        data.short_name = document.getElementById('sname').value;
+        data.device_id = document.getElementById('devid').value;
+        ev_id = document.getElementById('events').value;
+        fetch('https://api.routechoices.com/events/'+ ev_id + '/register/',
+        {
+            method: 'POST',
+            credentials: 'omit',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        }).then(function(r){
+            if (r.status === 400){
+                alert('Something went wrong.')
+                return
+            }
+            document.getElementById('p2').classList.add('d-none')
+            document.getElementById('p4').classList.remove('d-none')
+        }).catch(function(e){
+            alert('Something went wrong.')
+        })
+    };
+    Array.from(document.getElementsByClassName('user-setting-btn'))
+    .map(function(el){el.addEventListener("click", function(e){
+        document.getElementById('p2').classList.add('d-none')
+        document.getElementById('p3').classList.add('d-none')
+        document.getElementById('p4').classList.add('d-none')
+        document.getElementById('p1').classList.remove('d-none')
+    })})
+    Array.from(document.getElementsByClassName('refresh-btn'))
+    .map(function(el){el.addEventListener("click", function(e){
+        window.location.reload()
+    })})
+    function fetchEvents() {
+        fetch('https://api.routechoices.com/events', {method: 'GET'})
+            .then(function(r){return r.json()})
+            .then(function(evs) {
+                var events = evs.filter(function(e){return e.open_registration && (!e.end_date || luxon.DateTime.fromISO(e.end_date) > luxon.DateTime.now())}).map(function(e){return {id: e.id, name: e.name + ' - ' + e.club}});
+                console.log(events)
+                if(events.length === 0) {
+                    document.getElementById('p3').classList.remove('d-none')
+                } else {
+                    document.getElementById('p2').classList.remove('d-none')
+                    events.forEach( function(ev)
+                    {
+                        var opt = document.createElement("option");
+                        opt.setAttribute('value', ev.id);
+                        opt.appendChild(document.createTextNode(ev.name));
+                        document.getElementById('events').appendChild(opt);
+                    })
+                }}
+            )
+    }
+    </script>    
+</body>
+</html>
