@@ -47,11 +47,12 @@
     var userInfo = window.localStorage.getItem('userInfo');
     var myUrl = new URL(window.location.href.replace(/#/g,"?"));
     var devid = myUrl.searchParams.get("device_id");
-    document.getElementById('devid').value = devid || userInfo.devid || '';
+    document.getElementById('devid').value = devid || '';
     if (userInfo){
         userInfo = JSON.parse(userInfo);
         document.getElementById('name').value = userInfo.name;
         document.getElementById('sname').value = userInfo.short_name;
+        document.getElementById('devid').value = devid || userInfo.devid || '';
         document.getElementById('p1').classList.add('d-none');
         fetchEvents();
     } else {
