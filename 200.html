@@ -45,11 +45,13 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/luxon/1.27.0/luxon.min.js" integrity="sha512-cQXElo4AdS11Wtr5GFBmliue0OBZIhJjcSOSmF3RASBNfJMrkhF/F5JknHUm9klwHLLVG5+oiV6INy/yjgYPoA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script>
     var userInfo = window.localStorage.getItem('userInfo');
+    var myUrl = new URL(window.location.href.replace(/#/g,"?"));
+    var devid = myUrl.searchParams.get("device_id");
     if (userInfo){
         userInfo = JSON.parse(userInfo);
         document.getElementById('name').value = userInfo.name;
         document.getElementById('sname').value = userInfo.short_name;
-        document.getElementById('devid').value = userInfo.devid;
+        document.getElementById('devid').value = devid || userInfo.devid;
         document.getElementById('p1').classList.add('d-none');
         fetchEvents();
     } else {
