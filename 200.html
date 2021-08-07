@@ -94,7 +94,6 @@
         }).then(function(r){
             return r.json()
         }).then(function(data){
-            console.log(data)
             if (!data.id){
                 if(data instanceof Array) {
                     alert(data.join('\r\n'))
