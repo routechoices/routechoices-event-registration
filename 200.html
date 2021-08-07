@@ -92,8 +92,15 @@
             },
             body: JSON.stringify(data)
         }).then(function(r){
-            if (r.status === 400){
-                alert('Something went wrong.')
+            return r.json()
+        }).then(function(data){
+            console.log(data)
+            if (!data.id){
+                if(data instanceof Array) {
+                    alert(data.join('\r\n'))
+                } else {
+                    alert('Something went wrong.')
+                }
                 return
             }
             document.getElementById('p2').classList.add('d-none')
