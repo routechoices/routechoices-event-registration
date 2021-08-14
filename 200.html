@@ -28,9 +28,16 @@
             <h1>Event Selection</h1>
             <form id="form2">
                 <label for="events" class="form-label">Event:</label>
-                <select class="form-select" id="events" name="events"></select>
+                <select class="form-select" id="events" name="events" onchange="onEventSelect()"></select>
+                <p id="warningA" class="d-none">
+                    <i class="fa fa-warning"></i> You can stream your GPS data to only one event at a time. If you register now, your active session will end immediately.
+                </p>
+                <p id="warningB" class="d-none">
+                    <i class="fa fa-warning"></i> You can stream your GPS data to only one event at a time. If you register now, your active session will end at latest on <span id="event_start"></span>
+                </p>
                 <input style="margin-top:15px" class="form-control btn btn-primary" type="submit" value="Register for event" />
             </form>
+            
         </div>
         <div id="p3" class="d-none">
             <div><button class="btn user-setting-btn"><i class="fa fa-cog"></i> settings</button> <button class="btn refresh-btn"><i class="fa fa-refresh"></i> refresh</button></div>
@@ -43,7 +50,7 @@
     </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-gtEjrD/SeCtmISkJkNUaaKMoLD0//ElJ19smozuHV6z3Iehds+3Ulb9Bn9Plx0x4" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/luxon/1.27.0/luxon.min.js" integrity="sha512-cQXElo4AdS11Wtr5GFBmliue0OBZIhJjcSOSmF3RASBNfJMrkhF/F5JknHUm9klwHLLVG5+oiV6INy/yjgYPoA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://www.routechoices.com/static/vendor/dayjs-1.10.6/dayjs.min.js"></script>
     <script>
     var userInfo = window.localStorage.getItem('userInfo');
     var myUrl = new URL(window.location.href.replace(/#/g,"?"));
@@ -119,23 +126,39 @@
     .map(function(el){el.addEventListener("click", function(e){
         window.location.reload()
     })})
+    function onEventSelect(){
+        var select = document.getElementById('events');
+        var value = select.options[select.selectedIndex].value;
+        e = events.find(function(ev){return ev.id===value});
+        console.log(e, dayjs(e.start_date) < dayjs())
+        if(dayjs(e.start_date) < dayjs()) {
+            document.getElementById('warningA').classList.remove('d-none')
+            document.getElementById('warningB').classList.add('d-none')
+        } else {
+            document.getElementById('warningA').classList.add('d-none')
+            document.getElementById('warningB').classList.remove('d-none')
+            document.getElementById('event_start').innerHTML = dayjs(e.start_date).local().format('MMMM D, YYYY [at] HH:mm:ss')
+        }
+    }
+    
+    var events = [];
     function fetchEvents() {
         fetch('https://api.routechoices.com/events', {method: 'GET'})
             .then(function(r){return r.json()})
             .then(function(evs) {
-                var events = evs.filter(function(e){return e.open_registration && (!e.end_date || luxon.DateTime.fromISO(e.end_date) > luxon.DateTime.now())}).map(function(e){return {id: e.id, name: e.name + ' - ' + e.club}});
-                console.log(events)
+                events = evs.filter(function(e){return e.open_registration && (!e.end_date || dayjs(e.end_date) > dayjs())}).map(function(e){return {id: e.id, name: e.name + ' - ' + e.club, start_date: e.start_date}});
                 if(events.length === 0) {
                     document.getElementById('p3').classList.remove('d-none')
                 } else {
                     document.getElementById('p2').classList.remove('d-none')
-                    events.forEach( function(ev)
+                    events.forEach(function(ev)
                     {
                         var opt = document.createElement("option");
                         opt.setAttribute('value', ev.id);
                         opt.appendChild(document.createTextNode(ev.name));
                         document.getElementById('events').appendChild(opt);
                     })
+                    onEventSelect({target:{value:events[0].id}})
                 }}
             )
     }
